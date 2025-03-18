@@ -1,0 +1,40 @@
+
+{
+    "dq_rule_master": {
+      "columns": [
+        {
+          "name": "rule_id",
+          "type": "int",
+          "primary_key": true,
+          "nullable": false
+        },
+        {
+          "name": "rule_name",
+          "type": "string",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "rule_type",
+          "type": "string",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "rule_description",
+          "type": "string",
+          "primary_key": false,
+          "nullable": false
+        },
+        {
+          "name": "last_updated_date",
+          "type": "date",
+          "primary_key": false,
+          "nullable": false
+        }
+      ]
+    }
+}
+    
+
+
