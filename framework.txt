@@ -1,0 +1,42 @@
+dq_framework/
+│
+|---common/
+│       |---__init__.py
+|       |--- constants.py                       # Configuration file with S3 paths and variables
+|       |--- spark_config.py                    # sparkSession initialization
+|       |--- custom_logger.py                   # logger function
+|       |--- validation_config.py               # validation configs
+|       |--- utils.py                           # common utilities
+|
+|
+|
+|---metadata/                                   # contains metadata files of configuration tables
+|       |--- __init__.py
+|       |--- dq_entity_master.json
+|       |--- dq_execution_plan.json
+|       |--- dq_rule_master.json
+|       |--- ddl/                                # contains ddl for configuration tables
+|           |--- dq_entity_master_ddl.sql
+|           |--- dq_execution_plan_ddl.sql
+|           |--- dq_execution_result_ddl.sql
+|           |--- dq_rule_master_ddl.sql
+|
+|---rules/
+|       |---__init__.py
+|       |--- inbuilt_rules.py                   # Built-in rules like Null Check, Column Count, etc.
+|       |--- custom_rules.py                    # custome rules
+|
+|
+|
+|
+|---utilities/
+│       |---__init__.py
+|       |--- tables_loader.py                   # loads the configuration and data tables
+│       |--- apply_rules.py                     # logic for rule application
+|       |--- dq_execution.py                    # execution of plans on data
+│       |--- execution_result_saver.py          # saving results to result table
+|       |--- validation.py                      # validations on configuration tables
+│
+|
+│
+│--- dq_execution_master.py                                    # Main driver script for the DQ framework
