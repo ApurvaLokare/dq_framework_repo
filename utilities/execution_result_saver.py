@@ -9,11 +9,10 @@ def save_execution_result(result_df, entity_id):
     try:
         logger = get_logger()
         # Write the result DataFrame to the Iceberg table in append mode with
-        # partitioning
-        # result_df = result_df.withColumn("er_id", lit(None).cast("bigint"))
-        result_df.write.format("iceberg").mode("append").saveAsTable(
-            VAR_S3_EXECUTION_RESULT_TABLE_NAME
-        )
+        result_df.write\
+            .format("iceberg")\
+            .mode("append")\
+            .saveAsTable(VAR_S3_EXECUTION_RESULT_TABLE_NAME)
         # Log success message after successful save operation
         logger.info(
             f"[DQ_RESULT_SAVE] Result data saved for Entity id:{entity_id}. "
@@ -38,8 +37,10 @@ def save_invalid_records(
 
         target_path = f"{error_record_path}/{batch_id}/{er_id}"
         # Write the DataFrame to the storage location
-        invalid_records_df.write.mode("append")\
+        invalid_records_df.write\
+            .mode("append")\
             .format("parquet")\
+            .option("compression", "snappy")\
             .save(target_path)
         # Log success message after saving bad records
         logger.info(
@@ -63,9 +64,10 @@ def save_valid_records(valid_records_df, entity_id, output_path, batch_id):
         logger = get_logger()
         target_path = f"{output_path}/{batch_id}"
         # Write the DataFrame to the storage location in append mode
-        # with partitioning
-        valid_records_df.write.mode("overwrite")\
+        valid_records_df.write\
+            .mode("overwrite")\
             .format("parquet")\
+            .option("compression", "snappy")\
             .save(target_path)
         # Log success message after saving good records
         logger.info(

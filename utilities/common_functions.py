@@ -1,12 +1,14 @@
+import hashlib
 import json
+import time
 
 from pyspark.sql.functions import col
 
-from common.constants import (COL_ENTITY_ID, COL_ENTITY_METADATA, COL_EP_ID,
-                              COL_ERROR_FILE_PATH, COL_INPUT_FILE_PATH,
-                              COL_OUTPUT_FILE_PATH, COL_RULE_ID, COL_RULE_NAME,
-                              PROP_FILE_FORMAT, PROP_FORMAT_DETAILS,
-                              VAR_ENTITY_ID)
+from common.constants import (COL_ENTITY_ID, COL_ENTITY_METADATA,
+                              COL_ENTITY_NAME, COL_EP_ID, COL_ERROR_FILE_PATH,
+                              COL_INPUT_FILE_PATH, COL_OUTPUT_FILE_PATH,
+                              COL_RULE_ID, COL_RULE_NAME, PROP_FILE_FORMAT,
+                              PROP_FORMAT_DETAILS, VAR_ENTITY_ID)
 from common.custom_logger import get_logger
 
 
@@ -15,6 +17,7 @@ from common.custom_logger import get_logger
 # is_active is "Y". Converts the filtered data into a list of tuples
 # for further processing.
 def get_active_execution_plans(execution_plan_with_rule_df):
+    """
     try:
         logger = get_logger()
         plan_list = [
@@ -33,6 +36,28 @@ def get_active_execution_plans(execution_plan_with_rule_df):
             f"[DQ_GET_ACTIVE_PLANS] Exception occured in "
             f"fetch_execution_plan():{e}"
         )
+        return None
+    """
+    try:
+        logger = get_logger()
+        # Select only necessary columns and convert to list of tuples
+        plan_list = (
+            execution_plan_with_rule_df
+            .filter(col("is_active") == "Y")
+            .rdd.map(tuple)
+            .collect()
+        )
+        logger.info(
+            "[DQ_GET_ACTIVE_PLANS] Active execution plans "
+            "fetched successfully from execution plan table."
+        )
+        return plan_list
+    except Exception as e:
+        logger.error(
+            f"[DQ_GET_ACTIVE_PLANS] Exception occurred in "
+            f"fetch_execution_plan(): {e}"
+        )
+        return None
 
 
 # Merges the execution plan DataFrame with the rules DataFrame using
@@ -64,25 +89,28 @@ def join_execution_plan_with_rules(execution_plan_df, rules_df):
 
 
 # fetch path from entity master table path
-def fetch_entity_columns(entity_master_df, entity_id):
+def fetch_entity_columns(entity_filtered_master_df, entity_id):
+    """
     try:
         logger = get_logger()
         # Filter the dataframe for the specific entity_id and
         # select required columns
         result = (
-            entity_master_df
+            entity_filtered_master_df
             .filter(col(COL_ENTITY_ID) == entity_id)
             .select(
                 COL_INPUT_FILE_PATH,
                 COL_OUTPUT_FILE_PATH,
                 COL_ERROR_FILE_PATH,
-                COL_ENTITY_METADATA
+                COL_ENTITY_METADATA,
+                COL_ENTITY_NAME
             )
             .first()
         )
         # Initialize paths as None
-        input_file_path, output_file_path, error_file_path, entity_metadata = (
-            None, None, None, None
+        (input_file_path, output_file_path, error_file_path,
+            entity_metadata, entity_name) = (
+            None, None, None, None, None
         )
 
         if result:
@@ -107,9 +135,16 @@ def fetch_entity_columns(entity_master_df, entity_id):
             if result[COL_ENTITY_METADATA]:
                 entity_metadata = result[COL_ENTITY_METADATA]
             else:
-                logger.error(f"[FETCH_ENTITY_PATH] Error file path "
+                logger.error(f"[FETCH_ENTITY_PATH] entity_metadata column "
                              f"not found for entity_id: {entity_id}")
-            logger.info(f"[FETCH_ENTITY_PATH] File paths retrieved "
+
+            if result[COL_ENTITY_NAME]:
+                entity_name = result[COL_ENTITY_NAME]
+            else:
+                logger.error(f"[FETCH_ENTITY_PATH] entity_name column "
+                             f"not found for entity_id: {entity_id}")
+
+            logger.info(f"[FETCH_ENTITY_PATH] Required columns retrieved "
                         f"for entity_id: {entity_id}")
         else:
             logger.error(f"[FETCH_ENTITY_PATH] No records found "
@@ -119,21 +154,74 @@ def fetch_entity_columns(entity_master_df, entity_id):
             input_file_path,
             output_file_path,
             error_file_path,
-            entity_metadata
+            entity_metadata,
+            entity_name
         ]
 
     except Exception as e:
         logger.error(f"[FETCH_ENTITY_PATH] Error fetching file paths "
                      f"for entity_id: {entity_id} - {e}")
-        return None, None, None, None
+        return None, None, None, None, None
+    """
+    try:
+        logger = get_logger()
+
+        # Fetch entity details efficiently (limit the scan to 1 row)
+        result = (
+            entity_filtered_master_df
+            .filter(col(COL_ENTITY_ID) == entity_id)
+            .select(
+                COL_INPUT_FILE_PATH,
+                COL_OUTPUT_FILE_PATH,
+                COL_ERROR_FILE_PATH,
+                COL_ENTITY_METADATA,
+                COL_ENTITY_NAME
+            )
+            .limit(1)
+            .collect()
+        )
+
+        if not result:
+            logger.error(
+                f"[FETCH_ENTITY_PATH] No records found "
+                f"for entity_id: {entity_id}"
+            )
+            return None  # Return None if entity_id is not found
+
+        # Convert Row to dictionary for easy access
+        entity_data = result[0].asDict()
+
+        # Log missing columns in a single message instead of multiple logs
+        missing_columns = [
+            key for key, value in entity_data.items() if value is None
+        ]
+        if missing_columns:
+            logger.error(
+                f"[FETCH_ENTITY_PATH] Missing columns for "
+                f"entity_id {entity_id}: {missing_columns}"
+            )
+
+        logger.info(
+            f"[FETCH_ENTITY_PATH] Successfully fetched columns "
+            f"for entity_id: {entity_id}"
+        )
+
+        return entity_data
+
+    except Exception as e:
+        logger.error(
+            f"[FETCH_ENTITY_PATH] Error fetching file paths "
+            f"for entity_id: {entity_id} - {e}"
+        )
+        return None
 
 
-def fetch_rules(execution_plan_df):
+def fetch_rules(execution_plan_filtered__df):
     try:
         logger = get_logger()
         # Fetch distinct rule_ids from the dataframe and collect as a list
         rule_list = (
-            execution_plan_df.select(COL_RULE_ID)
+            execution_plan_filtered__df.select(COL_RULE_ID)
             .distinct()
             .rdd.flatMap(lambda x: x)
             .collect()
@@ -208,3 +296,18 @@ def extract_format_details(entity_metadata_config):
         logger.error(f"[EXTRACT FORMAT DETAILS] Exception occurred "
                      f"in extract_format_details(): {e}")
         return None, None
+
+
+# Function to generate the unique er_id using timestamp and hash
+def generate_erid(var_entity_id, var_plan_id):
+    """
+    Generate a unique var_er_id based on entity_id, plan_id,
+    and current timestamp.
+    :param var_entity_id: Entity ID
+    :param var_plan_id: Plan ID
+    :return: A 6-digit unique identifier
+    """
+    hash_value = hashlib.sha256(
+        f"{var_entity_id}-{var_plan_id}-{int(time.time() * 1000)}".encode()
+    ).hexdigest()
+    return int(hash_value, 16) % 900000 + 100000

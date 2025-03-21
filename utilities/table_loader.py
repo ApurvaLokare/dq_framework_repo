@@ -28,7 +28,8 @@ def filter_config_by_entity(df, entity_id):
         filtered_df = df.filter(col(COL_ENTITY_ID) == entity_id)
 
         # Check if DataFrame is empty
-        if filtered_df.rdd.isEmpty():
+        # if filtered_df.rdd.isEmpty():
+        if filtered_df.isEmpty():
             logger.warning(
                 f"[CONFIG LOADER] No records found for entity_id: {entity_id}"
             )
@@ -45,16 +46,23 @@ def filter_config_by_entity(df, entity_id):
         actual_columns = {k: v for k, v in actual_columns.items() if v}
 
         # Select available columns
+        """
         selected_df = filtered_df.select(
             [col(col_name) for col_name in actual_columns.values()]
         ).distinct()
-
+        """
+        selected_df = (
+            filtered_df.selectExpr(*actual_columns.values())
+        )
         # Collect and convert to dictionary
+        """
         entity_info = (
             selected_df.collect()[0].asDict()
             if selected_df.count() > 0
             else {}
-        )
+        )"""
+        collected_data = selected_df.collect()
+        entity_info = collected_data[0].asDict() if collected_data else {}
 
         # Format output for logging
         entity_details_str = ", ".join(

@@ -4,10 +4,12 @@ from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 EXECUTION_RESULTS_SCHEMA = StructType(
     [
         StructField("er_id", IntegerType(), False),
+        StructField("entity_id", IntegerType(), False),
+        StructField("entity_name", StringType(), False),
         StructField("batch_id", StringType(), False),
         StructField("ep_id", IntegerType(), False),
         StructField("rule_id", IntegerType(), False),
-        StructField("entity_id", IntegerType(), False),
+        StructField("rule_name", StringType(), False),
         StructField("column_name", StringType(), True),
         StructField("is_critical", StringType(), True),
         StructField("parameter_value", StringType(), True),
@@ -78,6 +80,7 @@ TABLE_DATAFRAMES = {
 # Status fail or success
 STATUS_FAIL = "FAILED"
 STATUS_PASS = "SUCCESS"
+STATUS_EXCEPTION = "EXCEPTION"
 # Inbuilt rule Module name
 RULE_MODULE = "rules.inbuilt_rules"
 # column name constants
@@ -89,6 +92,7 @@ COL_INPUT_FILE_PATH = "input_file_path"
 COL_OUTPUT_FILE_PATH = "output_file_path"
 COL_ERROR_FILE_PATH = "error_file_path"
 COL_ENTITY_METADATA = "entity_metadata"
+COL_ENTITY_NAME = "entity_name"
 # Properties constants
 PROP_COLUMNS = "columns"
 PROP_FOREIGN_KEY = "foreign_key"

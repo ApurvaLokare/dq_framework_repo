@@ -13,7 +13,8 @@ executions. Logs a summary of the execution and returns True if all rules pass
 
 
 def execute_data_quality_checks(
-    spark, execution_plan_with_rules_df, entity_data_df, path_list, batch_id
+    spark, execution_plan_with_rules_df, entity_data_df, path_list,
+    entity_name, batch_id
 ):
     try:
         logger = get_logger()
@@ -23,7 +24,8 @@ def execute_data_quality_checks(
         )
         # Apply rules on the entity data
         dq_execution_result = execute_data_quality_rules(
-            spark, entity_data_df, execution_plans_list, path_list, batch_id
+            spark, entity_data_df, execution_plans_list, path_list,
+            entity_name, batch_id
         )
         # If result is a list, count occurrences of different rule
         # validation statuses
@@ -49,7 +51,7 @@ def execute_data_quality_checks(
             return False
         # If result is a string, log the error message and fail execution
         elif isinstance(dq_execution_result, str):
-            logger.error(dq_execution_result)
+            # logger.error(dq_execution_result)
             logger.info("[DQ_CHECK_COMPLETED] DQ EXECUTION FAILED!")
             return False
         # If result is a boolean, determine success or failure

@@ -172,7 +172,7 @@ def is_df_empty(df, table_name, entity_id):
             )
             return False
         # Check if the DataFrame is empty using rdd.isEmpty() for efficiency
-        if df.limit(1).count() == 0:
+        if df.isEmpty():
             logger.error(
                 f"[DQ_VALIDATION] check_empty_dataframe validation failed! "
                 f"DataFrame for table '{table_name}' is empty for "

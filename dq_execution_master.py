@@ -38,18 +38,19 @@ def dq_check(VAR_ENTITY_ID, VAR_BATCH_ID):
         spark,
         VAR_S3_ENTITY_MASTER_TABLE_NAME,
         VAR_S3_EXECUTION_PLAN_TABLE_NAME,
-        VAR_S3_RULE_MASTER_TABLE_NAME
+        VAR_S3_RULE_MASTER_TABLE_NAME,
+        VAR_ENTITY_ID
     )
     # Filtering Config tables to load data according to VAR_ENTITY_ID
-    entity_master_filtered_df = filter_config_by_entity(
+    #entity_master_filtered_df = filter_config_by_entity(
         entity_master_df, VAR_ENTITY_ID)
-    TABLE_DATAFRAMES['dq_entity_master'] = entity_master_filtered_df
-    execution_plan_filtered_df = filter_config_by_entity(
+    TABLE_DATAFRAMES['dq_entity_master'] = entity_master_df
+    #execution_plan_filtered_df = filter_config_by_entity(
         execution_plan_df, VAR_ENTITY_ID)
-    TABLE_DATAFRAMES['dq_execution_plan'] = execution_plan_filtered_df
+    TABLE_DATAFRAMES['dq_execution_plan'] = execution_plan_df
     # Filter rules from rule_master_df based on rule list
     # fetch from execution_plan_df
-    rule_list = fetch_rules(execution_plan_filtered_df)
+    rule_list = fetch_rules(execution_plan_df)
     rule_master_filtered_df = fetch_filtered_rules(rule_list, rule_master_df)
     TABLE_DATAFRAMES['dq_rule_master'] = rule_master_filtered_df
 
