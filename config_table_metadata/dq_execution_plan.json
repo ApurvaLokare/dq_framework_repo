@@ -1,0 +1,62 @@
+{
+    "dq_execution_plan": {
+      "columns": [
+        {
+          "name": "ep_id",
+          "type": "int",
+          "nullable": false,
+          "primary_key":true
+        },
+        {
+          "name": "rule_id",
+          "type": "int",
+          "nullable": false,
+          "foreign_key": true,
+          "references":
+            {
+                  "table": "dq_rule_master",
+                  "column": "rule_id"
+            }
+        },
+        {
+          "name": "entity_id",
+          "type": "int",
+          "nullable": false,
+          "foreign_key":true,
+          "references":
+            {
+                  "table": "dq_entity_master",
+                  "column": "entity_id"
+            }
+        },
+        {
+          "name": "column_name",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "parameter_value",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "is_critical",
+          "type": "string",
+          "nullable": true,
+          "default_value": "N"
+        },
+        {
+          "name": "is_active",
+          "type": "string",
+          "nullable": true,
+          "default_value": "Y"
+        },
+        {
+          "name": "last_update_date",
+          "type": "date",
+          "nullable": false
+        }
+      ]
+    }
+
+}

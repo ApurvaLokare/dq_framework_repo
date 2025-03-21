@@ -1,0 +1,68 @@
+{
+    "dq_entity_master": {
+        "columns": [
+          {
+            "name": "entity_id",
+            "type": "int",
+            "primary_key": true,
+            "nullable": false
+          },
+          {
+            "name": "entity_name",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "entity_type",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "source_name",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "source_type",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "input_file_path",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "output_file_path",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "error_file_path",
+            "type": "string",
+            "primary_key": false,
+            "nullable": false
+          },
+          {
+            "name": "entity_metadata",
+            "type": "string",
+            "primary_key": false,
+            "nullable": true
+          },
+          {
+            "name": "last_updated_date",
+            "type": "date",
+            "primary_key": false,
+            "nullable": false
+          }
+        ]
+      }
+  }
+  
+  
