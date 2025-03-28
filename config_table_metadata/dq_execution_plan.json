@@ -42,13 +42,13 @@
         {
           "name": "is_critical",
           "type": "string",
-          "nullable": true,
+          "nullable": false,
           "default_value": "N"
         },
         {
           "name": "is_active",
           "type": "string",
-          "nullable": true,
+          "nullable": false,
           "default_value": "Y"
         },
         {

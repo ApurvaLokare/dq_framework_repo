@@ -1,6 +1,7 @@
 import sys
 
 from awsglue.utils import getResolvedOptions
+from pyspark.storagelevel import StorageLevel
 
 from common import constants
 from common.constants import (TABLE_DATAFRAMES,
@@ -38,21 +39,24 @@ def dq_check(VAR_ENTITY_ID, VAR_BATCH_ID):
         spark,
         VAR_S3_ENTITY_MASTER_TABLE_NAME,
         VAR_S3_EXECUTION_PLAN_TABLE_NAME,
-        VAR_S3_RULE_MASTER_TABLE_NAME,
-        VAR_ENTITY_ID
+        VAR_S3_RULE_MASTER_TABLE_NAME
     )
     # Filtering Config tables to load data according to VAR_ENTITY_ID
-    #entity_master_filtered_df = filter_config_by_entity(
+    entity_master_filtered_df = filter_config_by_entity(
         entity_master_df, VAR_ENTITY_ID)
-    TABLE_DATAFRAMES['dq_entity_master'] = entity_master_df
-    #execution_plan_filtered_df = filter_config_by_entity(
+    TABLE_DATAFRAMES['dq_entity_master'] = entity_master_filtered_df
+    execution_plan_filtered_df = filter_config_by_entity(
         execution_plan_df, VAR_ENTITY_ID)
-    TABLE_DATAFRAMES['dq_execution_plan'] = execution_plan_df
+    TABLE_DATAFRAMES['dq_execution_plan'] = execution_plan_filtered_df
     # Filter rules from rule_master_df based on rule list
     # fetch from execution_plan_df
     rule_list = fetch_rules(execution_plan_df)
     rule_master_filtered_df = fetch_filtered_rules(rule_list, rule_master_df)
     TABLE_DATAFRAMES['dq_rule_master'] = rule_master_filtered_df
+
+    entity_master_filtered_df.persist(StorageLevel.MEMORY_AND_DISK)
+    execution_plan_filtered_df.persist(StorageLevel.MEMORY_AND_DISK)
+    rule_master_filtered_df.persist(StorageLevel.MEMORY_AND_DISK)
 
     # Performing validations on filtered df
     metadata = load_metadata()
@@ -73,15 +77,18 @@ def dq_check(VAR_ENTITY_ID, VAR_BATCH_ID):
     # Load entity_data_df
     entity_file_path = entity_columns_list[0]
     entity_metadata = entity_columns_list[3]
+    entity_name = entity_columns_list[4]
     entity_data_df = load_entity_data(
         spark, entity_file_path, entity_metadata, VAR_BATCH_ID
     )
+    entity_data_df.persist(StorageLevel.MEMORY_AND_DISK)
     # Combine execution_plan_filtered_df with rule_master_filtered_df
     execution_plan_with_rule_df = join_execution_plan_with_rules(
         execution_plan_filtered_df, rule_master_filtered_df
     )
+    execution_plan_with_rule_df.persist(StorageLevel.MEMORY_AND_DISK)
     # Execute dq on actual entity_data_df
     execute_data_quality_checks(
         spark, execution_plan_with_rule_df, entity_data_df,
-        entity_columns_list,  VAR_BATCH_ID
+        entity_columns_list, entity_name, VAR_ENTITY_ID, VAR_BATCH_ID
     )
