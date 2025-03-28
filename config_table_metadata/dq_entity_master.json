@@ -52,7 +52,7 @@
           {
             "name": "entity_metadata",
             "type": "string",
-            "primary_key": true,
+            "primary_key": false,
             "nullable": false
           },
           {
