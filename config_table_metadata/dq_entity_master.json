@@ -52,8 +52,8 @@
           {
             "name": "entity_metadata",
             "type": "string",
-            "primary_key": false,
-            "nullable": true
+            "primary_key": true,
+            "nullable": false
           },
           {
             "name": "last_updated_date",

@@ -4,17 +4,24 @@ import logging
 # Function to add batch_id in log messages
 class BatchLoggerAdapter(logging.LoggerAdapter):
     # Custom LoggerAdapter that injects batch_id into log messages
-    def __init__(self, logger, batch_id="N/A"):
-        super().__init__(logger, {"batch_id": batch_id})
+    def __init__(self, logger, entity_id="N/A", batch_id="N/A"):
+        super().__init__(
+            logger, {"entity_id": entity_id, "batch_id": batch_id}
+        )
 
     def process(self, msg, kwargs):
-        return f"[Batch ID: {self.extra.get('batch_id', 'N/A')}] {msg}", kwargs
+        return (
+            f"[ENTITY_ID: {self.extra.get('entity_id', 'N/A')}] "
+            f"[BATCH_ID: {self.extra.get('batch_id', 'N/A')}] {msg}", kwargs
+        )
 
 
 class SafeFormatter(logging.Formatter):
     # Custom Formatter that ensures batch_id is always present in logs
     def format(self, record):
         if isinstance(self._style, logging.PercentStyle):  # Standard formatter
+            if "entity_id" not in record.__dict__:
+                record.__dict__["entity_id"] = "N/A"
             if "batch_id" not in record.__dict__:  # If batch_id is missing
                 record.__dict__["batch_id"] = "N/A"
         return super().format(record)
@@ -24,7 +31,7 @@ class SafeFormatter(logging.Formatter):
 global_logger = None
 
 
-def logger_init(batch_id=None):
+def logger_init(entity_id=None, batch_id=None):
     # Initializes the logger globally and ensures all modules reuse it
     global global_logger
 
@@ -39,7 +46,9 @@ def logger_init(batch_id=None):
             handler.setFormatter(formatter)
             logger.addHandler(handler)
 
-        global_logger = BatchLoggerAdapter(logger, batch_id or "N/A")
+        global_logger = BatchLoggerAdapter(
+            logger, entity_id or "N/A", batch_id or "N/A"
+        )
     return global_logger
 
 
