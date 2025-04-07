@@ -340,6 +340,6 @@ def execute_data_quality_rules(
     except Exception as e:
         logger.error(f"[DQ_RULE_EXECUTION] Exception occured while "
                      f"applying rules on data. "
-                     f"Function : apply_rules(), "
+                     f"Function : apply_rules(). "
                      f"Exception - {e}")
         return False

@@ -1,4 +1,4 @@
-from common.constants import STATUS_FAIL
+from common.constants import STATUS_FAIL, VAR_S3_EXECUTION_PLAN_TABLE_NAME
 from common.custom_logger import get_logger
 from utilities.apply_rules import execute_data_quality_rules
 from utilities.common_functions import get_active_execution_plans
@@ -22,6 +22,13 @@ def execute_data_quality_checks(
         execution_plans_list = get_active_execution_plans(
             execution_plan_with_rules_df
         )
+        # Check if list has any active plans
+        if not execution_plans_list:
+            logger.error(f"[DQ_RULE_EXECUTION] No active plans available "
+                         f"in table {VAR_S3_EXECUTION_PLAN_TABLE_NAME}. "
+                         f"Hence stopping the DQ process. "
+                         f"STATUS: {STATUS_FAIL}.")
+            return False
         # Apply rules on the entity data
         dq_execution_result = execute_data_quality_rules(
             spark, entity_data_df, execution_plans_list, path_list,
@@ -62,6 +69,8 @@ def execute_data_quality_checks(
         # Handle any unexpected exceptions and log the error
         logger.error(
             f"[DQ_CHECK_COMPLETED] Exception occurred in "
-            f"execute_data_quality_checks():{e}"
+            f"execute_data_quality_checks(). "
+            f"Function : execute_data_quality_checks()."
+            f"Exception - {e}."
         )
-        return False
+        raise Exception(e)

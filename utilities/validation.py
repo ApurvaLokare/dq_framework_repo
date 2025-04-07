@@ -60,7 +60,7 @@ def load_metadata():
                 f"[DQ_LOAD_METADATA] Error loading '{filename}' for table "
                 f"'{table_name}': {e}. STATUS:'{STATUS_FAIL}'."
             )
-            required_metadata[table_name] = []
+            raise Exception(e)
         # Handle unexpected errors gracefully
         except Exception as e:
             logger.error(
@@ -68,7 +68,7 @@ def load_metadata():
                 f"'{filename}' for table '{table_name}': {e}. "
                 f"STATUS:'{STATUS_FAIL}'."
             )
-            required_metadata[table_name] = []
+            raise Exception(e)
     # Return the compiled metadata dictionary
     return required_metadata
 
@@ -597,18 +597,26 @@ def apply_validation(filter_df, metadata, table_name, entity_id):
 # Generate dynamic validation list for each dtaframes to pass
 # execute_validations function
 def generate_validation(TABLE_DATAFRAMES, metadata, entity_id):
-    validations = [
-        (apply_validation, (df, metadata, table_name, entity_id))
-        for table_name, df in TABLE_DATAFRAMES.items()
-    ]
-    validations.extend(
-        (
-            validate_foreign_key_constraints,
-            (df, metadata, table_name, TABLE_DATAFRAMES, entity_id),
+    try:
+        logger = get_logger()
+        validations = [
+            (apply_validation, (df, metadata, table_name, entity_id))
+            for table_name, df in TABLE_DATAFRAMES.items()
+        ]
+        validations.extend(
+            (
+                validate_foreign_key_constraints,
+                (df, metadata, table_name, TABLE_DATAFRAMES, entity_id),
+            )
+            for table_name, df in TABLE_DATAFRAMES.items()
         )
-        for table_name, df in TABLE_DATAFRAMES.items()
-    )
-    return validations
+        return validations
+    except Exception as e:
+        logger.error(f"[GENERATE_VALIDATIONS] Exception occurred "
+                     f"while generating metadata validations. "
+                     f"Function : generate_validation(). "
+                     f"Exception - {e}")
+        raise Exception(e)
 
 
 # Executes metadata validation functions sequentially and
@@ -652,4 +660,4 @@ def execute_validations(validations):
             f"Function : execute_validations(). "
             f"Exception - {e}"
         )
-        return False
+        raise Exception(e)
