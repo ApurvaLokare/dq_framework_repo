@@ -32,6 +32,7 @@ def load_metadata():
         is assigned to the table.
     """
     logger = get_logger()
+    logger.info("[DQ_VALIDATION] Beginning the validation process...")
     # Dictionary to store metadata for each table
     required_metadata = {}
     # Iterate through each table and its corresponding metadata file
@@ -59,7 +60,7 @@ def load_metadata():
                 f"[DQ_LOAD_METADATA] Error loading '{filename}' for table "
                 f"'{table_name}': {e}. STATUS:'{STATUS_FAIL}'."
             )
-            required_metadata[table_name] = []
+            raise Exception(e)
         # Handle unexpected errors gracefully
         except Exception as e:
             logger.error(
@@ -67,7 +68,7 @@ def load_metadata():
                 f"'{filename}' for table '{table_name}': {e}. "
                 f"STATUS:'{STATUS_FAIL}'."
             )
-            required_metadata[table_name] = []
+            raise Exception(e)
     # Return the compiled metadata dictionary
     return required_metadata
 
@@ -101,7 +102,7 @@ def extract_metadata_property(metadata, table_name, property_name):
         if table_name not in metadata:
             logger.warning(
                 f"[DQ_EXTRACT_METADATA_PROPERTY] Table '{table_name}' "
-                f"not found in metadata. STATUS:'{STATUS_FAIL}'."
+                f"is not found in metadata. STATUS:'{STATUS_FAIL}'."
             )
             return {}
         # Retrieve the columns for the specified table
@@ -134,9 +135,10 @@ def extract_metadata_property(metadata, table_name, property_name):
         return result if result else {}
     except Exception as e:
         logger.error(
-            f"[DQ_EXTRACT_METADATA_PROPERTY] Exception occured in "
-            f"fetch_metadata_property : Error extracting '{property_name}' "
-            f"for '{table_name}': {e}. STATUS:'{STATUS_FAIL}'."
+            f"[DQ_EXTRACT_METADATA_PROPERTY] Exception occured while "
+            f"extracting property'{property_name}' for '{table_name}' "
+            f"Function : extract_metadata_property(). "
+            f"Exception - {e}."
         )
         return {}
 
@@ -189,9 +191,10 @@ def is_df_empty(df, table_name, entity_id):
     except Exception as e:
         # Log unexpected errors and return False
         logger.error(
-            f"[DQ_VALIDATION] Exception in check_empty_dataframe for "
-            f"table '{table_name}', entity_id '{entity_id}': {e}. "
-            f"STATUS: '{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exception occurred while checking empty "
+            f"dataframe for table '{table_name}' for entity_id {entity_id}. "
+            f"Function : is_df_empty(). "
+            f"Exception - {e}"
         )
         return False
 
@@ -238,7 +241,7 @@ def validate_column_types(df, metadata, table_name, entity_id):
             if actual_type != expected_type:
                 logger.error(
                     f"[DQ_VALIDATION] validate_column_types validation "
-                    f"failed: Column '{column}' in '{table_name}' "
+                    f"failed! Column '{column}' in '{table_name}' "
                     f"expected '{expected_type}', found '{actual_type}' "
                     f"for entity_id: {entity_id}. STATUS:'{STATUS_FAIL}'."
                 )
@@ -247,7 +250,7 @@ def validate_column_types(df, metadata, table_name, entity_id):
         if validation_passed:
             logger.info(
                 f"[DQ_VALIDATION] validate_column_types validation "
-                f"passed:All columns in table '{table_name}' have "
+                f"passed! All columns in table '{table_name}' have "
                 f"correct data types for entity_id '{entity_id}'. "
                 f"STATUS:'{STATUS_PASS}'."
             )
@@ -255,9 +258,10 @@ def validate_column_types(df, metadata, table_name, entity_id):
     except Exception as e:
         # Log unexpected errors and return False
         logger.error(
-            f"[DQ_VALIDATION] Exception in validate_column_data_types for "
-            f"table '{table_name}', entity_id '{entity_id}': {e}. "
-            f"STATUS:'F{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exception occurred while validating the column "
+            f"datatypes for table '{table_name}' for entity_id '{entity_id}'. "
+            f"Function : validate_column_types(). "
+            f"Exception - {e}. "
         )
         return False
 
@@ -292,7 +296,7 @@ def validate_nullable_constraints(df, metadata, table_name, entity_id):
         )
         if not nullable_constraints:
             logger.error(
-                f"[DQ_VALIDATION] No nullable constraint found for "
+                f"[DQ_VALIDATION] No nullable constraint property found for "
                 f"table '{table_name}'. "
                 f"STATUS:'{STATUS_FAIL}'."
             )
@@ -308,7 +312,8 @@ def validate_nullable_constraints(df, metadata, table_name, entity_id):
                 ).count()
                 if null_count > 0:
                     logger.error(
-                        f"[DQ_VALIDATION] Column '{column}' in "
+                        f"[DQ_VALIDATION] validate_nullable_constraints "
+                        f"validation failed! Column '{column}' in "
                         f"table '{table_name}' has {null_count} "
                         f"NULL values for entity_id '{entity_id}'. "
                         f"STATUS:'{STATUS_FAIL}'."
@@ -317,7 +322,8 @@ def validate_nullable_constraints(df, metadata, table_name, entity_id):
         # Log success if no violations are found
         if validation_passed:
             logger.info(
-                f"[DQ_VALIDATION] No NULL constraint violations in "
+                f"[DQ_VALIDATION] validate_nullable_constraints validation "
+                f"passed! No NULL constraint violations in "
                 f"table '{table_name}'for entity_id '{entity_id}'. "
                 f"STATUS:'{STATUS_PASS}'."
             )
@@ -325,9 +331,11 @@ def validate_nullable_constraints(df, metadata, table_name, entity_id):
     except Exception as e:
         # Log unexpected errors and return False
         logger.error(
-            f"[DQ_VALIDATION] Exception in validate_nullable_constraint for "
-            f"table '{table_name}', entity_id '{entity_id}': {e}. "
-            f"STATUS:'{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exception while validating the column "
+            f"nullability for table '{table_name}' "
+            f"for entity_id '{entity_id}'. "
+            f"Function : validate_nullable_constraints(). "
+            f"Exception - {e}. "
         )
         return False
 
@@ -376,7 +384,8 @@ def validate_primary_key_uniqueness(df, metadata, table_name, entity_id):
         # If only one record exists, uniqueness is implicitly valid
         if total_count == 1:
             logger.info(
-                f"[DQ_VALIDATION] Only one record found for primary key "
+                f"[DQ_VALIDATION] validate_primary_key_uniqueness validation "
+                f"passed! Only one record found for primary key "
                 f"column '{column_name}' in table '{table_name}' for "
                 f"entity id {entity_id}.STATUS:'{STATUS_PASS}'."
             )
@@ -393,10 +402,11 @@ def validate_primary_key_uniqueness(df, metadata, table_name, entity_id):
         # Log error if duplicates exist
         if duplicate_keys:
             logger.error(
-                f"[DQ_VALIDATION] Duplicate values found in primary key "
+                f"[DQ_VALIDATION] validate_primary_key_uniqueness validation "
+                f"failed! Duplicate values found in primary key "
                 f"column '{column_name}' in "
-                f"table '{table_name}': {duplicate_keys} for "
-                f"entity_id '{entity_id}'. STATUS:'{STATUS_FAIL}'."
+                f"table '{table_name}'for entity_id '{entity_id}': "
+                f"{duplicate_keys}. STATUS:'{STATUS_FAIL}'."
             )
             return False
         # Log success if primary key uniqueness is validated
@@ -409,9 +419,11 @@ def validate_primary_key_uniqueness(df, metadata, table_name, entity_id):
     except Exception as e:
         # Log unexpected errors and return False
         logger.error(
-            f"[DQ_VALIDATION] Exception in validate_primary_key_uniqueness "
-            f"for table '{table_name}', entity_id '{entity_id}': {e}. "
-            f"STATUS:'{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exception while validating the primary key "
+            f"uniqueness for table '{table_name}' "
+            f"for entity_id '{entity_id}'. "
+            f"Function : validate_primary_key_uniqueness(). "
+            f"Exception - {e}. "
         )
         return False
 
@@ -465,7 +477,7 @@ def validate_foreign_key_constraints(
             if parent_table not in TABLE_DATAFRAMES:
                 logger.error(
                     f"[DQ_VALIDATION] validate_foreign_key_relationship "
-                    f"validation failed: Parent table '{parent_table}' "
+                    f"validation failed! Parent table '{parent_table}' "
                     f"not found in provided DataFrames for "
                     f"entity_id '{entity_id}'. STATUS:'{STATUS_FAIL}'."
                 )
@@ -486,7 +498,7 @@ def validate_foreign_key_constraints(
                 ]
                 logger.error(
                     f"[DQ_VALIDATION] validate_foreign_key_relationship "
-                    f"validation failed: {missing_count} missing "
+                    f"validation failed! {missing_count} missing "
                     f"foreign key values in '{table_name}.{child_column}' "
                     f"referencing '{parent_table}.{parent_column}' "
                     f"for entity_id '{entity_id}'. "
@@ -496,7 +508,7 @@ def validate_foreign_key_constraints(
         # If all foreign key relationships are valid, log a success message
         logger.info(
             f"[DQ_VALIDATION] validate_foreign_key_relationship validation "
-            f"passed: All foreign key relationships verified for "
+            f"passed! All foreign key relationships verified for "
             f"table '{table_name}' for entity_id '{entity_id}'. "
             f"STATUS:'{STATUS_PASS}'."
         )
@@ -504,9 +516,11 @@ def validate_foreign_key_constraints(
     except Exception as e:
         # Log unexpected errors and return False
         logger.error(
-            f"[DQ_VALIDATION] Exception occurred during foreign key "
-            f"validation for table '{table_name}', "
-            f"entity_id '{entity_id}': {str(e)}. STATUS:'{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exception occurred while validating the "
+            f"foreign key relationship check for table '{table_name}' "
+            f"for entity_id '{entity_id}'. "
+            f"Function : validate_foreign_key_relationship(). "
+            f"Exception - {e}. "
         )
         return False
 
@@ -571,9 +585,11 @@ def apply_validation(filter_df, metadata, table_name, entity_id):
     # Return False in case of any unexpected exception
     except Exception as e:
         logger.error(
-            f"[DQ_VALIDATION] Unexpected error occurred during validation "
+            f"[DQ_VALIDATION] Exception occurred during validation "
             f"process for table {table_name} for "
-            f"entity_id '{entity_id}': {str(e)}. STATUS:'{STATUS_FAIL}'."
+            f"entity_id '{entity_id}': {str(e)}. "
+            f"Fucntion : apply_validation(). "
+            f"Exception - {e}."
         )
         return False
 
@@ -581,18 +597,26 @@ def apply_validation(filter_df, metadata, table_name, entity_id):
 # Generate dynamic validation list for each dtaframes to pass
 # execute_validations function
 def generate_validation(TABLE_DATAFRAMES, metadata, entity_id):
-    validations = [
-        (apply_validation, (df, metadata, table_name, entity_id))
-        for table_name, df in TABLE_DATAFRAMES.items()
-    ]
-    validations.extend(
-        (
-            validate_foreign_key_constraints,
-            (df, metadata, table_name, TABLE_DATAFRAMES, entity_id),
+    try:
+        logger = get_logger()
+        validations = [
+            (apply_validation, (df, metadata, table_name, entity_id))
+            for table_name, df in TABLE_DATAFRAMES.items()
+        ]
+        validations.extend(
+            (
+                validate_foreign_key_constraints,
+                (df, metadata, table_name, TABLE_DATAFRAMES, entity_id),
+            )
+            for table_name, df in TABLE_DATAFRAMES.items()
         )
-        for table_name, df in TABLE_DATAFRAMES.items()
-    )
-    return validations
+        return validations
+    except Exception as e:
+        logger.error(f"[GENERATE_VALIDATIONS] Exception occurred "
+                     f"while generating metadata validations. "
+                     f"Function : generate_validation(). "
+                     f"Exception - {e}")
+        raise Exception(e)
 
 
 # Executes metadata validation functions sequentially and
@@ -617,7 +641,7 @@ def execute_validations(validations):
         if not validation_passed:
             logger.error(
                 f"[DQ_VALIDATION] Some metadata validations failed. "
-                f"Please check the logs for details. "
+                f"Please check the logs for more info. "
                 f"Hence Metadata Validation process failed. "
                 f"STATUS:'{STATUS_FAIL}'."
             )
@@ -631,7 +655,9 @@ def execute_validations(validations):
     # Return False in case of any unexpected exception
     except Exception as e:
         logger.error(
-            f"[DQ_VALIDATION] Unexpected error occurred during metadata "
-            f"validation execution: {str(e)}. STATUS:'{STATUS_FAIL}'."
+            f"[DQ_VALIDATION] Exceptio occurred during metadata "
+            f"validation execution: {str(e)}. "
+            f"Function : execute_validations(). "
+            f"Exception - {e}"
         )
-        return False
+        raise Exception(e)

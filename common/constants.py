@@ -1,48 +1,15 @@
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
-
-# schema to create the df of execution result
-EXECUTION_RESULTS_SCHEMA = StructType(
-    [
-        StructField("er_id", IntegerType(), False),
-        StructField("entity_id", IntegerType(), False),
-        StructField("entity_name", StringType(), False),
-        StructField("batch_id", StringType(), False),
-        StructField("ep_id", IntegerType(), False),
-        StructField("rule_id", IntegerType(), False),
-        StructField("rule_name", StringType(), False),
-        StructField("column_name", StringType(), True),
-        StructField("is_critical", StringType(), True),
-        StructField("parameter_value", StringType(), True),
-        StructField("total_records", IntegerType(), False),
-        StructField("failed_records_count", IntegerType(), False),
-        StructField("er_status", StringType(), False),
-        StructField("error_records_path", StringType(), True),
-        StructField("error_message", StringType(), True),
-        StructField("execution_timestamp", StringType(), False),
-        StructField("year", StringType(), False),
-        StructField("month", StringType(), False),
-        StructField("day", StringType(), False),
-    ]
-)
-
-# entity id
+# Entity id default set to none
 VAR_ENTITY_ID = None
 
 # config table paths
 VAR_S3_RULE_MASTER_TABLE_NAME = "s3tablesbucket.dq_testdb2.dq_rule_master"
 VAR_S3_ENTITY_MASTER_TABLE_NAME = "s3tablesbucket.dq_testdb2.dq_entity_master"
-VAR_S3_EXECUTION_PLAN_TABLE_NAME = "\
-                                s3tablesbucket.dq_testdb2.dq_execution_plan"
-VAR_S3_EXECUTION_RESULT_TABLE_NAME = "\
-                                s3tablesbucket.dq_testdb2.dq_execution_result"
-
-"""
-# config table paths
-VAR_S3_RULE_MASTER_PATH = "job_catalog.dq_testdb2.df_rule_master"
-VAR_S3_ENTITY_MASTER_PATH = "job_catalog.dq_testdb2.dq_entity_master"
-VAR_S3_EXECUTION_PLAN_PATH = "job_catalog.dq_testdb2.dq_execution_plan"
-VAR_S3_EXECUTION_RESULT_PATH = "job_catalog.dq_testdb2.dq_execution_result"
-"""
+VAR_S3_EXECUTION_PLAN_TABLE_NAME = (
+    "s3tablesbucket.dq_testdb2.dq_execution_plan"
+)
+VAR_S3_EXECUTION_RESULT_TABLE_NAME = (
+    "s3tablesbucket.dq_testdb2.dq_execution_result"
+)
 
 # s3table bucket ARN id
 DQ_BUCKET = "arn:aws:s3tables:us-east-1:971996090633:bucket/dq-framework"
@@ -93,6 +60,7 @@ COL_OUTPUT_FILE_PATH = "output_file_path"
 COL_ERROR_FILE_PATH = "error_file_path"
 COL_ENTITY_METADATA = "entity_metadata"
 COL_ENTITY_NAME = "entity_name"
+COL_ISACTIVE = "is_active"
 # Properties constants
 PROP_COLUMNS = "columns"
 PROP_FOREIGN_KEY = "foreign_key"
