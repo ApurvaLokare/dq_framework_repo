@@ -3,6 +3,7 @@ import json
 import time
 
 from pyspark.sql.functions import col
+from pyspark.sql.utils import AnalysisException
 
 from common.constants import (COL_ENTITY_ID, COL_ENTITY_METADATA,
                               COL_ENTITY_NAME, COL_EP_ID, COL_ERROR_FILE_PATH,
@@ -74,6 +75,7 @@ def join_execution_plan_with_rules(execution_plan_df, rules_df):
             f"Function : join_execution_plan_with_rules(). "
             f"Exception - {e}."
         )
+        raise Exception(e)
 
 
 # fetch path from entity master table path
@@ -123,9 +125,10 @@ def fetch_entity_columns(entity_filtered_master_df, entity_id):
             f"Function : fetch_entity_columns(). "
             f"Exception - {e}"
         )
-        return None
+        raise Exception(e)
 
 
+# Fetch required rules from execution plan df
 def fetch_rules(execution_plan_filtered_df):
     try:
         logger = get_logger()
@@ -157,9 +160,10 @@ def fetch_rules(execution_plan_filtered_df):
                      f"table '{VAR_S3_EXECUTION_PLAN_TABLE_NAME}' ."
                      f"Function : fetch_rules()"
                      f"Exception - {e}")
-        return []
+        raise Exception(e)
 
 
+# Fetch required rules filtered rules maste df
 def fetch_filtered_rules(rule_list, rule_master_df):
     try:
         logger = get_logger()
@@ -188,46 +192,72 @@ def fetch_filtered_rules(rule_list, rule_master_df):
                      f"'{VAR_S3_RULE_MASTER_TABLE_NAME}'. "
                      f"Function : fetch_filtered_rules(). "
                      f"Exception - {e}")
-        return None
+        raise Exception(e)
 
 
+# Extract file format details
 def extract_file_format_details(entity_metadata_config):
+    """
+    Extracts the file format and format details from the given 
+    entity metadata configuration.
+
+    Args:
+        entity_metadata_config (str or dict): JSON string or dictionary 
+        containing metadata related to file format.
+
+    Returns:
+        tuple: (file_format, format_details)
+               - file_format (str): The format of the file 
+               (e.g., "parquet", "csv").
+               - format_details (dict): Additional format-specific options 
+               if available, else None.
+    """
     try:
-        logger = get_logger()
+        logger = get_logger()  # Initialize the logger for logging messages.
+
+        # Attempt to parse the entity metadata configuration 
+        # if it is in JSON string format.
         try:
             entity_metadata_config = json.loads(entity_metadata_config)
         except json.JSONDecodeError as e:
+            # Log an error if the JSON parsing fails.
             logger.error(f"[EXTRACT FORMAT DETAILS] Invalid JSON format "
                          f"provided in table "
-                         f"'{VAR_S3_ENTITY_MASTER_TABLE_NAME}' "
-                         f"in column '{COL_ENTITY_METADATA}'. "
-                         f"Error - {e}"
-                         )
+                         f"'{VAR_S3_ENTITY_MASTER_TABLE_NAME}' in "
+                         f"column '{COL_ENTITY_METADATA}'. "
+                         f"Error - {e}")
             return None, None
 
+        # Retrieve the file format from the metadata configuration.
         file_format = entity_metadata_config.get(PROP_FILE_FORMAT)
         if not file_format:
+            # Log an error if the file format key is missing.
             logger.error(f"[EXTRACT FORMAT DETAILS] Missing "
                          f"'{PROP_FILE_FORMAT}' in column "
                          f"'{COL_ENTITY_METADATA}' in table "
                          f"'{VAR_S3_ENTITY_MASTER_TABLE_NAME}'")
             return None, None
 
+        # Retrieve additional format details if available.
         format_details = entity_metadata_config.get(PROP_FORMAT_DETAILS, {})
         if not isinstance(format_details, dict):
+            # Log an error if format details are not in the 
+            # expected dictionary format.
             logger.error(f"[EXTRACT FORMAT DETAILS] Incorrect format details "
-                         f"are provided in table "
-                         f"'{VAR_S3_ENTITY_MASTER_TABLE_NAME}' "
-                         f"in column '{COL_ENTITY_METADATA}'")
+                         f"provided in table "
+                         f"'{VAR_S3_ENTITY_MASTER_TABLE_NAME}' in "
+                         f"column '{COL_ENTITY_METADATA}'")
             return file_format, None
+
         return file_format, format_details
 
     except Exception as e:
-        logger.error(f"[EXTRACT FORMAT DETAILS] Exception occurred while"
+        # Log any unexpected exception that occurs during execution.
+        logger.error(f"[EXTRACT FORMAT DETAILS] Exception occurred while "
                      f"extracting format details. "
-                     f"Function : extract_file_format_details(). "
+                     f"Function: extract_file_format_details(). "
                      f"Exception - {e}")
-        return None, None
+        return None, None  # Return None values in case of failure.
 
 
 # Function to generate the unique er_id using timestamp and hash
@@ -263,13 +293,14 @@ def generate_exec_id(var_entity_id):
 # Function to fetch the schema from given table
 def fetch_table_schema(spark, table_name):
     try:
+        # Initialize logger for capturing logs
         logger = get_logger()
+        if not spark.catalog.tableExists(table_name):
+            raise Exception(f"Configuration table '{table_name}' does  "
+                            f"not exist! Cannot proceed with DQ process.")
+        logger.info(f"[FETCH_TABLE_SCHEMA] Configuration table "
+                    f"'{table_name}' loaded successfully")
         df = spark.read.table(table_name)
-        logger.info(f"[FETCH TABLE SCHEMA] Table schema successfully "
-                    f"for table'{table_name}'.")
         return df.schema
     except Exception as e:
-        logger.error(f"[FETCH TABLE SCHEMA] Exeception occurred while "
-                     f"fetching table schema, for table '{table_name}'. "
-                     f"Function : fetch_table_schema(). "
-                     f"Exception - {e}")
+        raise Exception(e)
